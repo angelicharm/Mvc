@@ -3,6 +3,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -32,6 +33,7 @@ namespace Microsoft.AspNetCore.Mvc.ViewFeatures
         private readonly IHtmlGenerator _htmlGenerator;
         private readonly ICompositeViewEngine _viewEngine;
         private readonly HtmlEncoder _htmlEncoder;
+        private readonly DiagnosticSource _diagnosticSource;
         private readonly IViewBufferScope _bufferScope;
 
         private ViewContext _viewContext;
@@ -45,7 +47,8 @@ namespace Microsoft.AspNetCore.Mvc.ViewFeatures
             IModelMetadataProvider metadataProvider,
             IViewBufferScope bufferScope,
             HtmlEncoder htmlEncoder,
-            UrlEncoder urlEncoder)
+            UrlEncoder urlEncoder,
+            DiagnosticSource diagnosticSource)
         {
             if (htmlGenerator == null)
             {
@@ -83,6 +86,7 @@ namespace Microsoft.AspNetCore.Mvc.ViewFeatures
             _bufferScope = bufferScope;
             MetadataProvider = metadataProvider;
             UrlEncoder = urlEncoder;
+            _diagnosticSource = diagnosticSource;
         }
 
         /// <inheritdoc />
@@ -552,7 +556,11 @@ namespace Microsoft.AspNetCore.Mvc.ViewFeatures
                 var newViewData = new ViewDataDictionary<object>(baseViewData, model);
                 var viewContext = new ViewContext(ViewContext, view, newViewData, writer);
 
+                _diagnosticSource.BeforeView(view, viewContext);
+
                 await viewEngineResult.View.RenderAsync(viewContext);
+
+                _diagnosticSource.AfterView(view, viewContext);
             }
         }
 

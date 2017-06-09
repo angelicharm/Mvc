@@ -3,6 +3,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq.Expressions;
 using System.Text.Encodings.Web;
 using Microsoft.AspNetCore.Html;
@@ -27,6 +28,7 @@ namespace Microsoft.AspNetCore.Mvc.ViewFeatures
             IViewBufferScope bufferScope,
             HtmlEncoder htmlEncoder,
             UrlEncoder urlEncoder,
+            DiagnosticSource diagnosticSource,
             ExpressionTextCache expressionTextCache)
             : base(
                   htmlGenerator,
@@ -34,7 +36,8 @@ namespace Microsoft.AspNetCore.Mvc.ViewFeatures
                   metadataProvider,
                   bufferScope,
                   htmlEncoder,
-                  urlEncoder)
+                  urlEncoder,
+                  diagnosticSource)
         {
             if (expressionTextCache == null)
             {

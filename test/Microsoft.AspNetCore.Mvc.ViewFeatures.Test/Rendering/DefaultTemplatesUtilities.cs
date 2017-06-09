@@ -4,6 +4,7 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
+using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.Linq;
@@ -266,6 +267,11 @@ namespace Microsoft.AspNetCore.Mvc.Rendering
                     attributeProvider);
             }
 
+            var adapter = new TestDiagnosticListener();
+
+            var diagnosticSource = new DiagnosticListener("Test");
+            diagnosticSource.SubscribeWithAdapter(adapter);
+
             // TemplateRenderer will Contextualize this transient service.
             var innerHelper = (IHtmlHelper)new HtmlHelper(
                 htmlGenerator,
@@ -273,7 +279,8 @@ namespace Microsoft.AspNetCore.Mvc.Rendering
                 provider,
                 new TestViewBufferScope(),
                 new HtmlTestEncoder(),
-                UrlEncoder.Default);
+                UrlEncoder.Default,
+                diagnosticSource);
 
             if (innerHelperWrapper != null)
             {
@@ -297,6 +304,7 @@ namespace Microsoft.AspNetCore.Mvc.Rendering
                 new TestViewBufferScope(),
                 new HtmlTestEncoder(),
                 UrlEncoder.Default,
+                diagnosticSource,
                 expressionTextCache);
 
             var viewContext = new ViewContext(

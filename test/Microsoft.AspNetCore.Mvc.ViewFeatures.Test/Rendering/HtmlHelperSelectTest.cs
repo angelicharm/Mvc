@@ -4,6 +4,7 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
+using System.Diagnostics;
 using System.Globalization;
 using System.Linq;
 using System.Text.Encodings.Web;
@@ -1581,7 +1582,8 @@ namespace Microsoft.AspNetCore.Mvc.Rendering
                       metadataProvider,
                       new TestViewBufferScope(),
                       new Mock<HtmlEncoder>(MockBehavior.Strict).Object,
-                      new Mock<UrlEncoder>(MockBehavior.Strict).Object)
+                      new Mock<UrlEncoder>(MockBehavior.Strict).Object,
+                      new Mock<DiagnosticSource>(MockBehavior.Strict).Object)
             {
             }
 

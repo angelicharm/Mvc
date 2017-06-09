@@ -2,13 +2,20 @@
 // Licensed under the Apache License, Version 2.0. See License.txt in the project root for license information.
 
 using System;
+using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
+using System.Text.Encodings.Web;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Html;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc.Abstractions;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
 using Microsoft.AspNetCore.Mvc.TestCommon;
 using Microsoft.AspNetCore.Mvc.ViewEngines;
 using Microsoft.AspNetCore.Mvc.ViewFeatures;
+using Microsoft.AspNetCore.Mvc.ViewFeatures.Internal;
+using Microsoft.AspNetCore.Routing;
 using Moq;
 using Xunit;
 
@@ -68,10 +75,39 @@ namespace Microsoft.AspNetCore.Mvc.Rendering
 
         [Theory]
         [MemberData(nameof(PartialExtensionMethods))]
-        public void PartialMethods_DoesNotWrapThrownException(
+        public void PartialMethods_CallHtmlHelperWithExpectedArguments_WritesDiagnostic_BeforeAndAfterView(
             Func<IHtmlHelper, IHtmlContent> partialMethod,
-            object unusedModel,
-            ViewDataDictionary unusedViewData)
+            object expectedModel,
+            ViewDataDictionary expectedViewData)
+        {
+            // Arrange
+            var listener = new TestDiagnosticListener();
+            var diagnosticSource = new DiagnosticListener("Microsoft.AspNetCore");
+            diagnosticSource.SubscribeWithAdapter(listener);
+
+            var compositeViewEngine = new Mock<ICompositeViewEngine>();
+            var viewEngineResult = ViewEngineResult.Found("test", Mock.Of<IView>());
+            compositeViewEngine.Setup(e => e.GetView("test", "test", false)).Returns(viewEngineResult);
+
+            var helper = new TestHtmlHelper(diagnosticSource, compositeViewEngine.Object);
+
+            var viewContext = TestViewContext();
+            helper.Contextualize(viewContext);
+
+            // Act
+            var result = partialMethod(helper);
+
+            // Assert
+            Assert.NotNull(listener.BeforeView?.ViewContext);
+            Assert.NotNull(listener.AfterView?.ViewContext);
+        }
+
+        [Theory]
+        [MemberData(nameof(PartialExtensionMethods))]
+        public void PartialMethods_DoesNotWrapThrownException(
+                Func<IHtmlHelper, IHtmlContent> partialMethod,
+                object unusedModel,
+                ViewDataDictionary unusedViewData)
         {
             // Arrange
             var expected = new InvalidOperationException();
@@ -580,6 +616,53 @@ namespace Microsoft.AspNetCore.Mvc.Rendering
             public override string ToString()
             {
                 return "test-model-content";
+            }
+        }
+
+        internal class TestHtmlHelper : HtmlHelper
+        {
+            public TestHtmlHelper(DiagnosticSource diagnosticSource, ICompositeViewEngine compositeViewEngine)
+                : base(
+                      new Mock<IHtmlGenerator>(MockBehavior.Strict).Object,
+                      compositeViewEngine,
+                      new Mock<IModelMetadataProvider>(MockBehavior.Strict).Object,
+                      new TestViewBufferScope(),
+                      new Mock<HtmlEncoder>(MockBehavior.Strict).Object,
+                      new Mock<UrlEncoder>(MockBehavior.Strict).Object,
+                      diagnosticSource)
+            {
+            }
+        }
+
+        private ViewContext TestViewContext()
+        {
+            var httpContext = new DefaultHttpContext();
+            var viewContext = new ViewContext()
+            {
+                HttpContext = httpContext,
+                RouteData = new RouteData(),
+                ActionDescriptor = new ActionDescriptor(),
+                ClientValidationEnabled = false,
+                ExecutingFilePath = "test",
+                FormContext = new FormContext(),
+                Html5DateRenderingMode = Html5DateRenderingMode.CurrentCulture,
+                ValidationSummaryMessageElement = "test",
+                ValidationMessageElement = "test",
+                TempData = new TempDataDictionary(httpContext, new NullTempDataProvider())
+            };
+
+            return viewContext;
+        }
+
+        private class NullTempDataProvider : ITempDataProvider
+        {
+            public IDictionary<string, object> LoadTempData(HttpContext context)
+            {
+                return null;
+            }
+
+            public void SaveTempData(HttpContext context, IDictionary<string, object> values)
+            {
             }
         }
     }
