@@ -91,7 +91,7 @@ namespace Microsoft.AspNetCore.Mvc.Rendering
 
             var helper = new TestHtmlHelper(diagnosticSource, compositeViewEngine.Object);
 
-            var viewContext = TestViewContext();
+            var viewContext = CreateViewContext();
             helper.Contextualize(viewContext);
 
             // Act
@@ -105,9 +105,9 @@ namespace Microsoft.AspNetCore.Mvc.Rendering
         [Theory]
         [MemberData(nameof(PartialExtensionMethods))]
         public void PartialMethods_DoesNotWrapThrownException(
-                Func<IHtmlHelper, IHtmlContent> partialMethod,
-                object unusedModel,
-                ViewDataDictionary unusedViewData)
+            Func<IHtmlHelper, IHtmlContent> partialMethod,
+            object unusedModel,
+            ViewDataDictionary unusedViewData)
         {
             // Arrange
             var expected = new InvalidOperationException();
@@ -634,7 +634,7 @@ namespace Microsoft.AspNetCore.Mvc.Rendering
             }
         }
 
-        private ViewContext TestViewContext()
+        private ViewContext CreateViewContext()
         {
             var httpContext = new DefaultHttpContext();
             var viewContext = new ViewContext()
@@ -642,28 +642,11 @@ namespace Microsoft.AspNetCore.Mvc.Rendering
                 HttpContext = httpContext,
                 RouteData = new RouteData(),
                 ActionDescriptor = new ActionDescriptor(),
-                ClientValidationEnabled = false,
                 ExecutingFilePath = "test",
-                FormContext = new FormContext(),
-                Html5DateRenderingMode = Html5DateRenderingMode.CurrentCulture,
-                ValidationSummaryMessageElement = "test",
-                ValidationMessageElement = "test",
-                TempData = new TempDataDictionary(httpContext, new NullTempDataProvider())
+                FormContext = new FormContext()
             };
 
             return viewContext;
-        }
-
-        private class NullTempDataProvider : ITempDataProvider
-        {
-            public IDictionary<string, object> LoadTempData(HttpContext context)
-            {
-                return null;
-            }
-
-            public void SaveTempData(HttpContext context, IDictionary<string, object> values)
-            {
-            }
         }
     }
 }

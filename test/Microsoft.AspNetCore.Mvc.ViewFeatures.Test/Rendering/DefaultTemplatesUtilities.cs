@@ -267,11 +267,6 @@ namespace Microsoft.AspNetCore.Mvc.Rendering
                     attributeProvider);
             }
 
-            var adapter = new TestDiagnosticListener();
-
-            var diagnosticSource = new DiagnosticListener("Test");
-            diagnosticSource.SubscribeWithAdapter(adapter);
-
             // TemplateRenderer will Contextualize this transient service.
             var innerHelper = (IHtmlHelper)new HtmlHelper(
                 htmlGenerator,
@@ -280,7 +275,7 @@ namespace Microsoft.AspNetCore.Mvc.Rendering
                 new TestViewBufferScope(),
                 new HtmlTestEncoder(),
                 UrlEncoder.Default,
-                diagnosticSource);
+                new DiagnosticListener("Test"));
 
             if (innerHelperWrapper != null)
             {
@@ -304,7 +299,7 @@ namespace Microsoft.AspNetCore.Mvc.Rendering
                 new TestViewBufferScope(),
                 new HtmlTestEncoder(),
                 UrlEncoder.Default,
-                diagnosticSource,
+                new DiagnosticListener("test"),
                 expressionTextCache);
 
             var viewContext = new ViewContext(
